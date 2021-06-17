@@ -1,0 +1,7 @@
+[console_scripts]
+georinex_loc = georinex.__main__:georinex_loc
+georinex_plot = georinex.__main__:georinex_plot
+georinex_read = georinex.__main__:georinex_read
+georinex_time = georinex.__main__:georinex_time
+rinex2hdf5 = georinex.__main__:rinex2hdf5
+
