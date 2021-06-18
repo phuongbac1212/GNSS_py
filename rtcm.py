@@ -1,7 +1,14 @@
+import copy
 import sys
+import threading
+import time
 
 import serial
 import binascii
+import queue
+import hwcounter
+
+from rtcmSend import rtcmSend
 
 
 def getbitu(buff, pos, length):
@@ -11,30 +18,27 @@ def getbitu(buff, pos, length):
     return bits
 
 
-def extractGPSTime(data):
+def extractGPSTime(data, rtcmType):
     i = 24
-    rtcmType = getbitu(data, i, 12)
+    # rtcmType = getbitu(data, i, 12)
     i += 12;
     # / *decode rtcm3 message * /
-    if rtcmType == 1074 or rtcmType == 1075 or rtcmType == 1076 or rtcmType == 1077 or \
-            rtcmType == 1094 or rtcmType == 1095 or rtcmType == 1096 or rtcmType or 1097 or \
-            rtcmType == 1104 or rtcmType == 1105 or rtcmType == 1106 or rtcmType == 1107 or \
-            rtcmType == 1114 or rtcmType == 1115 or rtcmType == 1116 or rtcmType == 1117:
-        # / * GPS, GAL, SBS, QZS * /
+
+    if rtcmType in {1074, 1075, 1076, 1077, 1094, 1095, 1096, 1097, 1104, 1105, 1106, 1107, 1114, 1115, 1116, 1117}:
+        # print("GPS TYPE")
         i += 12
         tow = getbitu(data, i, 30) * 0.001
         i += 30
-        return tow
+        return int(tow)
 
-    if rtcmType == 1124 or rtcmType == 1125 or rtcmType == 1126 or rtcmType == 1127:
-        # / * BDS * /
+    if rtcmType in range(1124, 1127):
+        # print("BEIDOU")
         i += 12;
         tow = getbitu(data, i, 30) * 0.001;
         i += 30;
         i += 1;
-        tow += 14.0;  # / *BDT -> GPST * /
-        return tow;
-    return -1
+        return int(tow + 14)
+    return 0
 
 
 def ByteToHexStr(byte):
@@ -76,27 +80,65 @@ def getSingleRtcmMsg():
             rtcmId = rtcmFullmsg[3]
             rtcmId = rtcmId << 4
             rtcmId = rtcmId | ((rtcmFullmsg[4] >> 4) or 15)
-            return [rtcmFullmsg, rtcmDataFrame, rtcmId]
+            hex = ''.join('%02x' % b for b in rtcmFullmsg)
+            return [rtcmFullmsg, rtcmDataFrame, rtcmId, hex]
         msgByteCount += 1
         rtcmFullmsg.append(nowByte)
 
 
+###########################################################
+###################### MAIN FUNCTION HERE #################
+###########################################################
+
 SERIAL_PORT = '/dev/ttyUSB0'
 SERIAL_RATE = 115200
 gpsSerial = serial.Serial(SERIAL_PORT, SERIAL_RATE)
+
 rtcmExplain = {1005: "Stationary RTK reference station ARP", 1074: "GPS MSM4", 1077: "GPS MSM7", 1084: "GLONASS MSM4",
                1087: "GLONASS MSM7", 1094: "Galileo MSM4", 1097: "Galileo MSM7", 1124: "BeiDou MSM4",
                1127: "BeiDou MSM7", 1230: "GLONASS code-phase biases",
                4072: "Reference station PVT (u-blox proprietary RTCM Message)"}
-f = open("out.dat", "wb")
+
+queue = queue.Queue()
+thread1 = rtcmSend(queue)
+thread1.start()
+msg = []
+week = ((int(time.time()) - 315964782 - 18) // 60 // 60 // 24 // 7)
+tow = 0
+weekChange = False;
+log_file = open(str(week) + ".dat", "ab")
+
+
+def changeWeek():
+    print("CHANGE")
+    weekChange = True
+    threading.Timer((week+1)*7*24*60*60 - (int(time.time()) - 315964782 - 18), changeWeek).start()
+
+
+threading.Timer((week+1)*7*24*60*60 - (int(time.time()) - 315964782 - 18), changeWeek).start()
+
 while True:
     rtcmMsg = getSingleRtcmMsg()
     rtcmex = rtcmExplain[rtcmMsg[2]] if rtcmMsg[2] in rtcmExplain else str(rtcmMsg[2])
-    if rtcmMsg[2] == 1074:
-        print(extractGPSTime(rtcmMsg[0]))
-    #     a = int.from_bytes(rtcmMsg[0][6:10], byteorder="big", signed=False)
-    #
-    # else:
-    #     a = 0
-    # print("[RTCM] (", rtcmex, ") : ", a, "|", len(rtcmMsg[0]), "|", rtcmMsg[0])
-    # f.write(bytearray(rtcmMsg[0]))
+
+    if weekChange:
+        if extractGPSTime(rtcmMsg[1]) < 10:
+            week += 1
+            log_file.close()
+            log_file = open(str(week) + ".dat", "ab")
+            print("week has change")
+            weekChange = False
+
+    log_file.write(bytes(rtcmMsg[0]))
+
+    if rtcmMsg[2] == 1005:
+        print("new msg")
+        data = [msg, week, copy.deepcopy(tow)]
+        queue.put(data)
+        msg.clear()
+    else :
+        tow = extractGPSTime(rtcmMsg[0], rtcmMsg[2])
+        print(tow)
+
+    msg.append(rtcmMsg[3].encode("ascii"))
+
