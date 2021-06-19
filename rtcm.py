@@ -102,7 +102,7 @@ rtcmExplain = {1005: "Stationary RTK reference station ARP", 1074: "GPS MSM4", 1
 queue = queue.Queue()
 thread1 = rtcmSend(queue)
 thread1.start()
-msg = []
+msg = ''
 week = ((int(time.time()) - 315964782 - 18) // 60 // 60 // 24 // 7)
 tow = 0
 weekChange = False;
@@ -132,13 +132,11 @@ while True:
     log_file.write(bytes(rtcmMsg[0]))
 
     if rtcmMsg[2] == 1005:
-        print("new msg")
         data = [msg, week, copy.deepcopy(tow)]
         queue.put(data)
-        msg.clear()
-    else :
+        msg = ''
+    else:
         tow = extractGPSTime(rtcmMsg[0], rtcmMsg[2])
-        print(tow)
 
-    msg.append(rtcmMsg[3].encode("ascii"))
+    msg += rtcmMsg[3]
 

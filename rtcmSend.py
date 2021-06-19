@@ -1,3 +1,5 @@
+import sys
+
 import requests
 import time
 import threading
@@ -24,7 +26,7 @@ class rtcmSend(threading.Thread):
             }
             try:
                 x = requests.post(self.import_url, data=data)
-                # print(data)
+                print(x, "\t time=", rtcm_data[2], "\t size=", sys.getsizeof(rtcm_data[0]))
             except Exception as err:
                 print(err.args)
             time.sleep(0.5)
