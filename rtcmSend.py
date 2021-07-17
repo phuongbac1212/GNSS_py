@@ -18,6 +18,8 @@ class rtcmSend(threading.Thread):
         if self.queue.qsize() >= 1:
             # print("not emplty", self.queue.qsize())
             rtcm_data = self.queue.get()
+            if rtcm_data[2] < 0:
+                continue
             data = {
                 "data": rtcm_data[0],
                 "time": rtcm_data[2],

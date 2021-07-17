@@ -56,7 +56,7 @@ def getSingleRtcmMsg():
     while True:
         nowByte = int(ByteToHexStr(gpsSerial.read(1)), base=16)
         if msgByteCount == 0:
-            if nowByte == 0xA0:  # 0xD3
+            if nowByte == 211:  # 0xD3
                 if len(dropMsg) != 0:
                     print("[UNKNOWN] : ", end="")
                     print(dropMsg)
@@ -92,30 +92,16 @@ SERIAL_PORT = '/dev/ttyUSB0'
 SERIAL_RATE = 115200
 gpsSerial = serial.Serial(SERIAL_PORT, SERIAL_RATE)
 
-rtcmExplain = {1005: "Stationary RTK reference station ARP", 1074: "GPS MSM4", 1077: "GPS MSM7", 1084: "GLONASS MSM4",
-               1087: "GLONASS MSM7", 1094: "Galileo MSM4", 1097: "Galileo MSM7", 1124: "BeiDou MSM4",
-               1127: "BeiDou MSM7", 1230: "GLONASS code-phase biases",
-               4072: "Reference station PVT (u-blox proprietary RTCM Message)"}
-
 queue = queue.Queue()
 thread1 = rtcmSend(queue)
 thread1.start()
 msg = ''
+tow = -1
 week = ((int(time.time()) - 315964782 - 18) // 60 // 60 // 24 // 7)
 
-daytime = [86400, 172800, 259200, 345600, 432000, 518400, 604800]
-date = ((int(time.time()) - 315964782 - 18) // 60 // 60 // 24 % 7)
-
-tow = -1
-weekChange = False;
-try:
-    os.mkdir("/home/fang/send/" + str(week))
-except:
-    print("folder exist")
-log_file = open("/home/fang/send/" + str(week) + "/" + str(week) + "_" + str(date) + ".dat", "ab")
+log_file = open("/home/fang/send/" + str(week)+".dat", "ab")
 
 while True:
-    print("OK")
     rtcmMsg = getSingleRtcmMsg()
     log_file.write(bytes(rtcmMsg[0]))
     if rtcmMsg[2] == 1005:
@@ -124,19 +110,10 @@ while True:
         msg = ''
     else:
         tow = extractGPSTime(rtcmMsg[0], rtcmMsg[2])
-        if tow == 0:
-            date = 0
+        if 0 == tow :
             week += 1
-            try:
-                os.mkdir("/home/fang/send/" + str(week))
-            except:
-                print("folder exist")
             log_file.close()
-            log_file = open("/home/fang/send/" + str(week) + "/" + str(week) + "_" + str(date) + ".dat", "ab")
-            print("date has change 1 ", tow)
-        elif tow >= daytime[date]:
-            date += 1
-            log_file.close()
-            log_file = open("/home/fang/send/" + str(week) + "/" + str(week) + "_" +str(date) + ".dat", "ab")
-            print("date has change 2 ", tow)
+            log_file = open("/home/fang/send/" + str(week)+".dat", "ab")
+            print("week has change 1 ", tow)
     msg += rtcmMsg[3]
+
