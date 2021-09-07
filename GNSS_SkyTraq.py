@@ -20,8 +20,8 @@ def zipfile(dir, dest):
     # subprocess.run("7z a -o{" + dir + "} -t7z " + dir + "/" + dest + ".7z " + dir + "/" + dest + ".dat -m9=LZMA2 -aoa",
     #                shell=True)
     zipObj = py7zr.SevenZipFile(dir + "/" + dest + ".7z", 'w')
-    zipObj.write(dir + "/" + dest + ".dat")
-    zipObj.write(dir + "/" + dest + ".csv")
+    zipObj.write(dir + "/" + dest + ".dat", dest+".dat")
+    zipObj.write(dir + "/" + dest + ".csv", dest+".csv")
     zipObj.close()
 
     if os.path.exists(dir + "/" + dest + ".7z"):
@@ -45,7 +45,7 @@ def stqSend():
             data = {
                 "data": stq_data[0],
                 "time": stq_data[1] * 604800 + round(stq_data[2]),
-                "GPS_Week": str(stq_data[1]) + " " + str(stq_data[2] // 24 // 60 // 60),
+                "GPS_Week": stq_data[1],
                 "stationID": "pipi",
                 "temperature": stq_data[3],
                 "atmospheric_pressure": stq_data[4],
