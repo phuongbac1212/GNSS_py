@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import binascii
 import copy
 import multiprocessing.queues
@@ -19,6 +20,7 @@ import smbus2
 def zipfile(dir, dest):
     # subprocess.run("7z a -o{" + dir + "} -t7z " + dir + "/" + dest + ".7z " + dir + "/" + dest + ".dat -m9=LZMA2 -aoa",
     #                shell=True)
+    zip_path = dir + "/" + dest + ".7z"
     zipObj = py7zr.SevenZipFile(dir + "/" + dest + ".7z", 'w')
     zipObj.writeall(dir + "/" + dest + ".dat", dest+".dat")
     zipObj.writeall(dir + "/" + dest + ".csv", dest+".csv")
@@ -30,8 +32,9 @@ def zipfile(dir, dest):
         os.system("rm " + dir + "/" + dest + ".csv")
     else:
         print("7z running")
-
-
+    os.system("/home/gnss/gdrive upload --parent 1clJ40gbolVktoYmWukR0TDLOaLI4GgVV " + zip_path)
+    #os.system("/home/gnss/gdrive about > /home/gnss/gdrive.log")
+    print("UPLOADED")
 #############################################################
 
 
@@ -54,7 +57,7 @@ def stqSend():
             }
             try:
                 x = requests.post(import_url, data=data)
-                print(x, "\t time=", stq_data[2], "\t size=", len(stq_data[0]), "\t", q.qsize(), stq_data[3:6])
+                #print(x, "\t time=", stq_data[2], "\t size=", len(stq_data[0]), "\t", q.qsize(), stq_data[3:6])
             except Exception as err:
                 print(err.args)
 
@@ -127,7 +130,7 @@ while True:
         cur_wn = stqGetWN(msg, msg_type)
         cur_tow = stqGetTow(msg, msg_type)
         cur_day = (int(cur_tow)) // 60 // 60 // 24 % 7
-        #cur_day = (int(cur_tow)) // 300 % 10 
+        #cur_day = (int(cur_tow)) // 300  
         if cur_day != day or cur_wn != wn:
             multiprocessing.Process(target=zipfile, args=(
                 copy.deepcopy(home_path + str(wn)), copy.deepcopy(str(wn) + "_" + str(day)))).start()
