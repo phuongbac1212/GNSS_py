@@ -1,3 +1,4 @@
+import os
 import time
 import serial
 from datetime import date
@@ -8,6 +9,7 @@ me007 = serial.Serial(SERIAL_PORT, SERIAL_RATE)
 LOG_PATH = "./sensor/me007/"
 
 day = date.today()
+os.makedirs(LOG_PATH, exist_ok = True)
 log_file = open(LOG_PATH+str(day)+".csv", "a")
 
 while (True):
@@ -26,7 +28,9 @@ while (True):
             dist = 0
             tempr = 0
 
-        log_file.write(str(int(time.time())) + ", " + str(dist) + ", " + str(tempr))
+        dat = (str(int(time.time())) + ", " + str(dist) + ", " + str(tempr)+"\n")
+        print(dat)
+        log_file.write(dat)
     except Exception as err:
         print("ERROR")
     time.sleep(1)
