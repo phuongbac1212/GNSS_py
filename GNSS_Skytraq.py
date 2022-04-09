@@ -6,10 +6,8 @@ import os
 import struct
 import time
 import py7zr
-
 import requests
 import serial
-
 import bme280
 import smbus2
 
@@ -32,9 +30,11 @@ def zipfile(dir, dest):
         os.system("rm " + dir + "/" + dest + ".csv")
     else:
         print("7z running")
-    os.system("/home/gnss/gdrive upload --parent 1clJ40gbolVktoYmWukR0TDLOaLI4GgVV " + zip_path)
+    os.system("/home/gnss/gdrive upload --parent 1r46OvSr_On1AyMt-UCd8a4dgnCI9COth " + zip_path)
     #os.system("/home/gnss/gdrive about > /home/gnss/gdrive.log")
     print("UPLOADED")
+
+
 #############################################################
 
 
@@ -50,14 +50,16 @@ def stqSend():
                 "data": stq_data[0],
                 "time": stq_data[1] * 604800 + round(stq_data[2]),
                 "GPS_Week": stq_data[1],
-                "stationID": "60cc71512c850461b8693d93",
+                "stationID": "60c753f02c850461b8693d92",
                 "temperature": stq_data[3],
                 "atmospheric_pressure": stq_data[4],
-                "humidity": stq_data[5]
+                "humidity": stq_data[5],
+                "distance": stq_data[6],
+                "tempr_sf": stq_data[7],
             }
             try:
                 x = requests.post(import_url, data=data)
-                #print(x, "\t time=", stq_data[2], "\t size=", len(stq_data[0]), "\t", q.qsize(), stq_data[3:6])
+                print("\t time=", stq_data[2], "\t size=", len(stq_data[0]), "\t", q.qsize(), stq_data)
             except Exception as err:
                 print(err.args)
 
@@ -72,7 +74,7 @@ def stqGetTow(bytes, type):
     if type == 0xDF:
         return struct.unpack('>d', bytes[9:17])[0]
     if type == 0xE5:
-        return int.from_bytes(bytes[9:13], "big")/1000
+        return int.from_bytes(bytes[9:13], "big") / 1000
 
 
 def stqGetWN(bytes, type):
@@ -80,12 +82,19 @@ def stqGetWN(bytes, type):
         return int.from_bytes(bytes[7:9], "big")
 
 
+def checksum(msg, len):
+    checksum = 0
+    for i in range(4, 4 + msg_len):
+        checksum ^= msg[i]
+    return (checksum == msg[msg_len + 4])
+
+
 ########### A little variables ##############################
 home_path = "/home/gnss/"
 SERIAL_PORT = '/dev/ttyS3'
 SERIAL_RATE = 115200
 gpsSerial = serial.Serial(SERIAL_PORT, SERIAL_RATE)
-
+me007 = serial.Serial("/dev/ttyS2", 9600)
 import_url = 'http://112.137.134.7:5000/data'
 
 port = 0
@@ -124,13 +133,19 @@ while True:
         msg += gpsSerial.read_until(b'\x0d\x0a')
         # print(len(msg))
 
+    if (not checksum(msg, msg_len)):
+        print("fail")
+        continue;
+    else:
+        print("OK\n")
+
     send_msg += binascii.hexlify(msg).decode('utf-8').upper()
 
     if msg_type == 0xE5:
         cur_wn = stqGetWN(msg, msg_type)
         cur_tow = stqGetTow(msg, msg_type)
         cur_day = (int(cur_tow)) // 60 // 60 // 24 % 7
-        #cur_day = (int(cur_tow)) // 300  
+        # cur_day = (int(cur_tow)) // 300
         if cur_day != day or cur_wn != wn:
             multiprocessing.Process(target=zipfile, args=(
                 copy.deepcopy(home_path + str(wn)), copy.deepcopy(str(wn) + "_" + str(day)))).start()
@@ -150,13 +165,25 @@ while True:
             print(err.args)
             bmedata = None
 
-        if bmedata != None:
-            q.put([send_msg, wn, stqGetTow(msg, msg_type), bmedata.temperature, bmedata.pressure, bmedata.humidity])
-            sen_file.write(str(cur_wn*60*60*24*7 + cur_tow)+","+str(round(bmedata.temperature, 4))+", "+str(round(bmedata.pressure, 4))+", "+str(round(bmedata.humidity, 4))+"\n")
+        me007.flush()
+        me007_data = me007.read_until(b'\xff')
+        if len(me007_data) >= 7:
+            dist = me007_data[1] << 8 | me007_data[2]
+            tempr = me007_data[3] << 8 | me007_data[4]
         else:
-            q.put([send_msg, wn, stqGetTow(msg, msg_type), 0, 0, 0])
+            dist = 0
+            tempr = 0
+        if bmedata != None:
+            q.put(
+                [send_msg, wn, stqGetTow(msg, msg_type), bmedata.temperature, bmedata.pressure, bmedata.humidity, dist,
+                 tempr])
+            sen_file.write(str(cur_wn * 60 * 60 * 24 * 7 + cur_tow) + "," + str(round(bmedata.temperature, 4)) +
+                           ", " + str(round(bmedata.pressure, 4)) + ", " + str(round(bmedata.humidity, 4)) +
+                           ", " + str(dist) + ", " + str(tempr) + "\n")
+        else:
+            q.put([send_msg, wn, stqGetTow(msg, msg_type), 0, 0, 0, dist, tempr])
         send_msg = ''
-        #print(hex(msg_type) + " " + str(wn) + " " + str(day) + " " + str(cur_tow+1))
+        # print(hex(msg_type) + " " + str(wn) + " " + str(day) + " " + str(cur_tow+1))
     log_file.write(msg)
     log_file.flush()
     sen_file.flush()
