@@ -32,5 +32,5 @@ while (True):
     except Exception as err:
         print("ERROR")
         bmedata = None
-    time.sleep(1)
+    time.sleep(0.7)
 

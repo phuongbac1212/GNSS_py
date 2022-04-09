@@ -33,5 +33,5 @@ while (True):
         log_file.write(dat)
     except Exception as err:
         print("ERROR")
-    time.sleep(1)
+    time.sleep(0.5)
 
