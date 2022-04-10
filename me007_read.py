@@ -28,10 +28,10 @@ while (True):
             dist = 0
             tempr = 0
 
-        dat = (str(int(time.time())) + ", " + str(dist) + ", " + str(tempr)+"\n")
+        dat = (str(int(time.time())) + ", " + str(dist) + ", " + str(tempr)+"\r\n")
         print(dat)
         log_file.write(dat)
     except Exception as err:
         print("ERROR")
-    time.sleep(0.5)
+    time.sleep(0.0)
 

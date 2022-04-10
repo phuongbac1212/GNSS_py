@@ -19,12 +19,12 @@ os.makedirs(LOG_PATH + str(gps_week), exist_ok=True)
 log_file = open(LOG_PATH + str(gps_week) + "/" + str(gps_week) + "_" + str(gps_day) + ".dat", "ab")
 
 gpsSerial.flush()  # clean before reading...
-send_msg = []
+send_msg = ''
 while True:
     # reading data
     msg = gpsSerial.read_until(b'\x0d\x0a')
     if msg[0:2] != b'\xa0\xa1':
-        send_msg = ""
+        send_msg = ''
         continue
     msg_len = int.from_bytes(msg[2:4], "big")
     while msg_len > len(msg) - 7:
@@ -33,7 +33,7 @@ while True:
     msg_type = int.from_bytes(msg[4:5], "big")
 
     # append to var
-    send_msg += msg
+    send_msg += binascii.hexlify(msg).decode('utf-8').lower()
 
     # update time and print output
     if msg_type == 0xE5:
@@ -45,8 +45,8 @@ while True:
             log_file.close()
             log_file = open(LOG_PATH + str(gps_week) + "/" + str(gps_week) + "_" + str(gps_day) + ".dat", "ab")
 
-    print(bytes(send_msg).hex())
-    send_msg = []
+        print(send_msg)
+        send_msg =''
 
 # logging
 log_file.write(msg)
