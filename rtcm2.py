@@ -88,7 +88,7 @@ def getSingleRtcmMsg():
 ###################### MAIN FUNCTION HERE #################
 ###########################################################
 
-SERIAL_PORT = '/dev/ttyUSB0'
+SERIAL_PORT = '/dev/ttyS3'
 SERIAL_RATE = 115200
 gpsSerial = serial.Serial(SERIAL_PORT, SERIAL_RATE)
 
@@ -104,6 +104,7 @@ log_file = open("/home/fang/send/" + str(week)+".dat", "ab")
 while True:
     rtcmMsg = getSingleRtcmMsg()
     log_file.write(bytes(rtcmMsg[0]))
+    #print(rtcmMsg[4])
     if rtcmMsg[2] == 1005:
         data = [msg, week, copy.deepcopy(tow)]
         queue.put(data)

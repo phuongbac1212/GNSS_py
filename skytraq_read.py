@@ -5,7 +5,7 @@ import time
 import serial
 import math
 
-LOG_PATH = "./"
+LOG_PATH = "/home/GNSS_py/"
 SERIAL_PORT = '/dev/ttyS3'
 SERIAL_RATE = 115200
 
@@ -45,10 +45,9 @@ while True:
             log_file.close()
             log_file = open(LOG_PATH + str(gps_week) + "/" + str(gps_week) + "_" + str(gps_day) + ".dat", "ab")
 
-        print(send_msg)
+        #print(send_msg)
         send_msg =''
 
-# logging
-log_file.write(msg)
-os.fsync(log_file.fileno())
-time.sleep(0.01)
+    log_file.write(msg)
+    os.fsync(log_file.fileno())
+    time.sleep(0.01)
