@@ -1,0 +1,13 @@
+[Unit]
+Description=Service for logging water height
+
+[Service]
+User=root
+WorkingDirectory=/home/GNSS_py/
+ExecStart=python3 /home/GNSS_py/me007_read.py
+Restart=on-abnormal
+
+
+[Install]
+WantedBy=multi-user.target
+

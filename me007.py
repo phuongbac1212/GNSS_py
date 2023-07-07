@@ -3,9 +3,9 @@ import time
 import serial
 from datetime import date
 
-SERIAL_PORT = "/dev/ttyS2"
+SERIAL_PORT = "/dev/ttyUSB0"
 SERIAL_RATE = 9600
-me007 = serial.Serial(SERIAL_PORT, SERIAL_RATE)
+me007 = serial.Serial(SERIAL_PORT, SERIAL_RATE, timeout=1)
 LOG_PATH = "/home/GNSS_py/sensor/me007/"
 
 day = date.today()
