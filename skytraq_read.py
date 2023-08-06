@@ -6,6 +6,8 @@ import time
 import serial
 import serial.tools.list_ports
 
+import pymongo
+
 import math
 def getAlphaPort():
     for port, desc, hwid in serial.tools.list_ports.grep("VID:PID=10c4:ea60"):
@@ -16,7 +18,7 @@ def getAlphaPort():
 
 SERIAL_PORT = getAlphaPort()
 
-LOG_PATH = "/home/fang/Working/GNSS_py/"
+LOG_PATH = "./"
 SERIAL_RATE = 115200
 
 os.makedirs(LOG_PATH, exist_ok=True)
@@ -60,8 +62,19 @@ while True:
             log_file = open(LOG_PATH + str(gps_week) + "/" + str(gps_week) + "_" + str(gps_day) + ".dat", "ab")
 
         #print(send_msg)
+        try:
+            json = {"time":str(int(time.time())),
+                    "data":send_msg}
+            myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+            mydb = myclient["Cm4-sen"]
+            mycol = mydb["alpha"]
+            x = mycol.insert_one(json)
+        except Exception as e:
+            print(e)
         send_msg =''
-
-    log_file.write(msg)
-    os.fsync(log_file.fileno())
+    try:
+        log_file.write(msg)
+        os.fsync(log_file.fileno())
+    except Exception as e:
+        print(e)
     time.sleep(0.01)

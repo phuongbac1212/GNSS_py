@@ -4,3 +4,4 @@ backup/data*
 venv
 old
 .idea
+sensor/
