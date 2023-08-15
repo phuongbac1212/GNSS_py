@@ -10,7 +10,7 @@ import pymongo
 
 import math
 def getAlphaPort():
-    for port, desc, hwid in serial.tools.list_ports.grep("VID:PID=10c4:ea60"):
+    for port, desc, hwid in serial.tools.list_ports.grep("VID:PID=0403:6001"):
         # print("{}: {} [{}]".format(port, desc, hwid))
         return port
     pass
@@ -55,10 +55,10 @@ while True:
             gps_day = int(ts // 60 // 60 // 24 % 7)
             os.makedirs(LOG_PATH + str(gps_week), exist_ok=True)
             log_file.close()
-            try:
-                subprocess.Popen(["gzip", "-f", log_file.name])
-            except Exception as e:
-                print(e)
+            # try:
+            #     subprocess.Popen(["gzip", "-f", log_file.name])
+            # except Exception as e:
+            #     print(e)
             log_file = open(LOG_PATH + str(gps_week) + "/" + str(gps_week) + "_" + str(gps_day) + ".dat", "ab")
 
         #print(send_msg)
