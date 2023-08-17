@@ -6,7 +6,7 @@ import serial.tools.list_ports
 import requests
 import math
 
-GLOBAL_API_URL = 'https://testapi.septentrio.eu.org/skytraq_upload'
+GLOBAL_API_URL = 'https://api_db.septentrio.eu.org/skytraq_upload'
 
 
 def getAlphaPort():

@@ -4,7 +4,7 @@ from datetime import date
 import serial.tools.list_ports
 import requests
 
-GLOBAL_API_URL = 'https://swagger.septentrio.eu.org/upload_aux'
+GLOBAL_API_URL = 'https://api_db.septentrio.eu.org/upload_aux'
 
 def getRS485Port():
     return "/dev/ttyAMA2"

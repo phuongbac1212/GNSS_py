@@ -22,7 +22,7 @@ class TCPConnection:
         return data
 
 
-GLOBAL_API_URL = 'https://testapi.septentrio.eu.org/rtcm_upload'
+GLOBAL_API_URL = 'https://api_db.septentrio.eu.org/rtcm_upload'
 
 if __name__ == '__main__' : 
     listen = TCPConnection()
