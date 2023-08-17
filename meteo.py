@@ -1,12 +1,13 @@
 import os
 import time
 from datetime import date
-import pymongo
 import serial.tools.list_ports
+import requests
 
+GLOBAL_API_URL = 'https://swagger.septentrio.eu.org/upload_aux'
 
 def getRS485Port():
-    return "/dev/ttyAMA3"
+    return "/dev/ttyAMA2"
     # for port, desc, hwid in serial.tools.list_ports.grep("VID:PID=10C4:EA60"):
     #     # print("{}: {} [{}]".format(port, desc, hwid))
     #     return port
@@ -15,12 +16,12 @@ def getRS485Port():
 SERIAL_PORT = getRS485Port()
 SERIAL_RATE = 9600
 sm = serial.Serial(SERIAL_PORT, SERIAL_RATE, timeout=1)
-LOG_PATH = "sensor/sm/"
+LOG_PATH = "aux/"
 os.makedirs(LOG_PATH, exist_ok=True)
 
 while True:
     try:
-	# read the atmospheric data
+        # read the atmospheric data
         try:
             sm.write([0x04, 0x03, 0x00, 0x00, 0x00, 0x04, 0x44, 0x5c])
             at_data = sm.read_until(b'\x0403')
@@ -92,29 +93,25 @@ while True:
                ", " + str(ws_val) +
                ", " + str(wd_val) +
                ", " + str(ap_val) +
-               ", " + str(tp_val) +
                ", " + str(hm_val) +
                "\r\n")
-        json = {"time":str(int(time.time())),
-                "sm":str(sm_val),
-                "tp":str(tp_val),
-                "EC":str(ec_val),
-                "pH":str(ph_val),
-                "N":str(n_val),
-                "P":str(p_val),
-                "K":str(k_val),
-                "salinity":str(sal_val),
-                "TDS":str(tds_val),
-                "WS" : str(ws_val),
-                "WD" : str(wd_val),
-                "Pressure" : str(ap_val),
-                "temp" : str(tp_val),
-                "humid" : str(hm_val)};
+        json = {"time":int(time.time()),
+                "soil_moisture":sm_val,
+                "temperature":tp_val,
+                "EC":ec_val,
+                "pH":ph_val,
+                "N":n_val,
+                "P":p_val,
+                "K":k_val,
+                "salinity":sal_val,
+                "TDS":tds_val,
+                "wind_speed" : ws_val,
+                "wind_direction" : wd_val,
+                "atmos_pressure" : ap_val,
+                "humid" : hm_val}
         try:
-            myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-            mydb = myclient["Cm4-sen"]
-            mycol = mydb["meteo"]
-            x = mycol.insert_one(json)
+            x = requests.post(GLOBAL_API_URL, json = json)
+            print(x)
         except Exception as e:
             print(e)
         #print(dat)
