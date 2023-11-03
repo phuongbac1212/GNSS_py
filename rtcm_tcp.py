@@ -26,7 +26,7 @@ GLOBAL_API_URL = 'https://api_db.septentrio.eu.org/rtcm_upload'
 
 if __name__ == '__main__' : 
     listen = TCPConnection()
-    listen.connect('localhost', 4321)
+    listen.connect('192.168.1.3', 4321)
 
     f = open("testrtcm.dat", "wb")
     while (True):
@@ -38,8 +38,8 @@ if __name__ == '__main__' :
             json = {"UTCtime": int(time.time()),
                     "GPSepoch": ts,
                     "rtcm_msg": rawMsg.hex()}
-            x = requests.post(GLOBAL_API_URL, json)
-            print(x)
+            x = requests.post(GLOBAL_API_URL, json, timeout=2)
+            #print(x)
         except Exception as e:
             print(e)
         time.sleep(0.001)

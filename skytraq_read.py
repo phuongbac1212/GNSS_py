@@ -28,7 +28,7 @@ def checkMsg(messages, start, stop, cs):
 
 SERIAL_PORT = getAlphaPort()
 
-LOG_PATH = "./"
+LOG_PATH = "/mnt/data/"
 SERIAL_RATE = 115200
 
 os.makedirs(LOG_PATH, exist_ok=True)
@@ -68,15 +68,16 @@ while True:
             os.makedirs(LOG_PATH + str(gps_week), exist_ok=True)
             log_file.close()
             log_file = open(LOG_PATH + str(gps_week) + "/" + str(gps_week) + "_" + str(gps_day) + ".dat", "ab")
-        # print(send_msg)
+            #print(send_msg)
         try:
             json = {"GpsWeek": gps_week,
                     "GpsTow": ts,
                     "skytraq": send_msg}
-            x = requests.post(GLOBAL_API_URL, json)
-            print(x)
+            x = requests.post(GLOBAL_API_URL, json, timeout=1)
+            if x.status_code != 200:
+                raise Exception('not send' + str(x.status_code))
         except Exception as e:
-            print("send" + e)
+            print(e)
         send_msg = ''
     try:
         log_file.write(msg)

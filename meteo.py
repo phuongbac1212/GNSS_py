@@ -16,7 +16,7 @@ def getRS485Port():
 SERIAL_PORT = getRS485Port()
 SERIAL_RATE = 9600
 sm = serial.Serial(SERIAL_PORT, SERIAL_RATE, timeout=1)
-LOG_PATH = "aux/"
+LOG_PATH = "/mnt/data/aux/"
 os.makedirs(LOG_PATH, exist_ok=True)
 
 while True:
@@ -110,8 +110,8 @@ while True:
                 "atmos_pressure" : ap_val,
                 "humid" : hm_val}
         try:
-            x = requests.post(GLOBAL_API_URL, json = json)
-            print(x)
+            x = requests.post(GLOBAL_API_URL, json = json, timeout=1)
+            #print(x)
         except Exception as e:
             print(e)
         #print(dat)
